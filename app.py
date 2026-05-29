@@ -27,7 +27,7 @@ except ImportError:  # Local SQLite development does not need psycopg installed.
 
 
 app = Flask(__name__)
-app.config["DATABASE"] = os.environ.get("DATABASE_PATH", "analytics.db")
+app.config["DATABASE"] = os.environ.get("DATABASE_PATH", "link_tracker.db")
 app.config["DATABASE_URL"] = os.environ.get("DATABASE_URL", "")
 app.config["DB_BACKEND"] = os.environ.get(
     "DB_BACKEND", "postgres" if os.environ.get("DATABASE_URL") else "sqlite"
@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS short_links (
     destination_url TEXT NOT NULL,
     title TEXT,
     is_active INTEGER NOT NULL DEFAULT 1,
-    legacy_tracked_link_id INTEGER UNIQUE,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -86,7 +85,6 @@ CREATE TABLE IF NOT EXISTS short_links (
     destination_url TEXT NOT NULL,
     title TEXT,
     is_active INTEGER NOT NULL DEFAULT 1,
-    legacy_tracked_link_id INTEGER UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -164,30 +162,8 @@ def integrity_error() -> type[Exception]:
     return sqlite3.IntegrityError
 
 
-def table_exists(table_name: str) -> bool:
-    if db_backend() == "postgres":
-        row = execute(
-            """
-            SELECT 1
-            FROM information_schema.tables
-            WHERE table_schema = 'public' AND table_name = ?
-            """,
-            (table_name,),
-        ).fetchone()
-    else:
-        row = execute(
-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
-            (table_name,),
-        ).fetchone()
-    return row is not None
-
-
 def init_db() -> None:
     executescript(POSTGRES_SCHEMA if db_backend() == "postgres" else SQLITE_SCHEMA)
-
-    if db_backend() == "sqlite" and table_exists("tracked_links"):
-        migrate_legacy_tracked_links()
-
     get_db().commit()
 
 
@@ -196,42 +172,6 @@ def ensure_database() -> None:
     if not app.config.get("DB_INITIALIZED"):
         init_db()
         app.config["DB_INITIALIZED"] = True
-
-
-def migrate_legacy_tracked_links() -> None:
-    rows = execute(
-        """
-        SELECT id, destination_url, created_at
-        FROM tracked_links
-        ORDER BY id
-        """
-    ).fetchall()
-
-    for row in rows:
-        existing = execute(
-            "SELECT id FROM short_links WHERE legacy_tracked_link_id = ?",
-            (row["id"],),
-        ).fetchone()
-        if existing:
-            continue
-
-        code = unique_code(prefix=f"legacy{row['id']}")
-        execute(
-            """
-            INSERT INTO short_links (
-                code, destination_url, title, is_active,
-                legacy_tracked_link_id, created_at
-            )
-            VALUES (?, ?, ?, 1, ?, ?)
-            """,
-            (
-                code,
-                strip_utm_params(row["destination_url"]),
-                f"Imported tracked link {row['id']}",
-                row["id"],
-                row["created_at"],
-            ),
-        )
 
 
 def normalize_url(raw_url: str) -> str:
@@ -249,16 +189,6 @@ def normalize_url(raw_url: str) -> str:
 def is_valid_url(value: str) -> bool:
     parsed = urlparse(value)
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
-
-
-def strip_utm_params(url: str) -> str:
-    parsed = urlparse(url)
-    query_params = [
-        (key, value)
-        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
-        if key not in UTM_FIELDS
-    ]
-    return urlunparse(parsed._replace(query=urlencode(query_params)))
 
 
 def add_query_params(url: str, params: dict[str, str]) -> str:

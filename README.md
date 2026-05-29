@@ -34,7 +34,7 @@ Then open `http://127.0.0.1:5000`.
 - `SECRET_KEY`: recommended for stable login sessions
 - `DATABASE_URL`: Neon/Postgres connection string for production
 - `DB_BACKEND`: optional, defaults to `postgres` when `DATABASE_URL` is set and `sqlite` otherwise
-- `DATABASE_PATH`: optional local SQLite path, defaults to `analytics.db`
+- `DATABASE_PATH`: optional local SQLite path, defaults to `link_tracker.db`
 - `PUBLIC_BASE_URL`: optional public origin for generated short URLs, such as `https://your-domain.com`
 
 ## Tests

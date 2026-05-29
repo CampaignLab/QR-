@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS short_links (
     destination_url TEXT NOT NULL,
     title TEXT,
     is_active INTEGER NOT NULL DEFAULT 1,
-    legacy_tracked_link_id INTEGER UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
