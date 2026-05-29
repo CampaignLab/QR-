@@ -143,14 +143,13 @@
         }
     }
 
-        utmToggle.addEventListener("change", syncUtmVisibility);
-        syncUtmVisibility();
-    </script>
-</body>
-</html>
+    utmToggle.addEventListener("change", syncUtmVisibility);
+    syncUtmVisibility();
+</script>
 <script
   async
   src="https://campaign-lab-analytics.vercel.app/tracker.js"
   data-site="qrandutm_generator"
   data-consent="granted"
 ></script>
+{% endblock %}
