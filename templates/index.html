@@ -1,337 +1,149 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Generator</title>
-    <style>
-        :root {
-            color-scheme: light;
-            --bg: #f5efe4;
-            --panel: #fffdf8;
-            --ink: #1a1a1a;
-            --accent: #0f766e;
-            --accent-dark: #115e59;
-            --line: #d6cfc1;
-            --muted: #4b5563;
-        }
+{% extends "base.html" %}
 
-        * {
-            box-sizing: border-box;
-        }
+{% block title %}Create Link{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
-            background:
-                radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
-                linear-gradient(180deg, #f8f2e8 0%, var(--bg) 100%);
-            color: var(--ink);
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        .shell {
-            width: min(900px, 100%);
-            margin: 0 auto;
-        }
-
-        .card {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-        }
-
-        h1 {
-            margin: 0 0 12px;
-            font-size: clamp(2rem, 4vw, 3rem);
-            line-height: 1;
-        }
-
-        p {
-            margin: 0 0 24px;
-            font-size: 1rem;
-        }
-
-        form {
-            display: grid;
-            gap: 14px;
-        }
-
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 4px 0;
-            font-size: 0.98rem;
-        }
-
-        .toggle-row input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--accent);
-        }
-
-        input[type="text"],
-        textarea {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            font: inherit;
-            font-size: 1rem;
-            background: #fff;
-        }
-
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .utm-fields {
-            display: grid;
-            gap: 12px;
-            padding: 16px;
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .utm-fields[hidden] {
-            display: none;
-        }
-
-        .field-group {
-            display: grid;
-            gap: 6px;
-        }
-
-        .field-group label {
-            font-size: 0.94rem;
-        }
-
-        .hint {
-            margin: 0;
-            font-size: 0.92rem;
-            color: var(--muted);
-        }
-
-        button,
-        .download {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            width: fit-content;
-            min-width: 160px;
-            padding: 12px 18px;
-            border: 0;
-            border-radius: 999px;
-            background: var(--accent);
-            color: #fff;
-            text-decoration: none;
-            font: inherit;
-            cursor: pointer;
-            transition: background 160ms ease, transform 160ms ease;
-        }
-
-        button:hover,
-        .download:hover {
-            background: var(--accent-dark);
-            transform: translateY(-1px);
-        }
-
-        .error {
-            color: #9f1239;
-            margin-top: 8px;
-        }
-
-        .result,
-        .variant-results {
-            margin-top: 22px;
-            padding-top: 18px;
-            border-top: 1px solid var(--line);
-        }
-
-        .result {
-            display: grid;
-            gap: 12px;
-            justify-items: start;
-        }
-
-        .variant-results {
-            display: grid;
-            gap: 14px;
-        }
-
-        .qr-frame {
-            background: #fff;
-            padding: 14px;
-            border-radius: 18px;
-            border: 1px solid var(--line);
-        }
-
-        .qr-frame img {
-            display: block;
-            width: min(280px, 100%);
-            height: auto;
-        }
-
-        .variant-grid {
-            display: grid;
-            gap: 14px;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        }
-
-        .variant-card {
-            display: grid;
-            gap: 10px;
-            padding: 18px;
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.72);
-        }
-
-        .variant-card h2 {
-            margin: 0;
-            font-size: 1.05rem;
-        }
-
-        .link {
-            margin: 0;
-            word-break: break-word;
-        }
-
-    </style>
-</head>
-<body>
-    <div class="shell">
-        <main class="card">
-            <h1>QR Generator</h1>
-            <p>Generate a single QR code for any link, or switch on UTM mode to create a batch of tagged links with optional QR codes for each one.</p>
-
-            <form method="post">
-                <input
-                    type="text"
-                    name="url"
-                    placeholder="https://example.com"
-                    value="{{ url }}"
-                    required
-                >
-
-                <label class="toggle-row" for="generate_utm_set">
+{% block content %}
+<main class="grid">
+    <section class="panel">
+        <form class="form" method="post">
+            <div class="grid two">
+                <div class="field">
+                    <label for="url">Destination URL</label>
                     <input
-                        type="checkbox"
-                        id="generate_utm_set"
-                        name="generate_utm_set"
-                        {% if generate_utm_set %}checked{% endif %}
+                        type="text"
+                        id="url"
+                        name="url"
+                        placeholder="https://example.com"
+                        value="{{ url }}"
+                        required
                     >
-                    Generate a UTM link set
-                </label>
-
-                <div class="utm-fields" id="utm-fields" {% if not generate_utm_set %}hidden{% endif %}>
-                    <p class="hint">Enter one variant per line as <code>source,medium</code>. The app will append the shared campaign value to each one.</p>
-
-                    <div class="field-group">
-                        <label for="utm_campaign">UTM Campaign</label>
-                        <input
-                            type="text"
-                            id="utm_campaign"
-                            name="utm_campaign"
-                            placeholder="spring-launch"
-                            value="{{ utm_campaign }}"
-                        >
-                    </div>
-
-                    <div class="field-group">
-                        <label for="utm_variants">UTM Variants</label>
-                        <textarea
-                            id="utm_variants"
-                            name="utm_variants"
-                            spellcheck="false"
-                        >{{ utm_variants }}</textarea>
-                    </div>
-
-                    <label class="toggle-row" for="generate_variant_qrs">
-                        <input
-                            type="checkbox"
-                            id="generate_variant_qrs"
-                            name="generate_variant_qrs"
-                            {% if generate_variant_qrs %}checked{% endif %}
-                        >
-                        Generate QR codes for each UTM link
-                    </label>
                 </div>
 
-                <button type="submit">Generate</button>
-            </form>
-
-            {% if error %}
-                <p class="error">{{ error }}</p>
-            {% endif %}
-
-            {% if single_qr_image %}
-                <section class="result">
-                    <div class="qr-frame">
-                        <img src="data:image/png;base64,{{ single_qr_image }}" alt="QR code for {{ url }}">
-                    </div>
-                    <p class="link"><strong>Link:</strong> {{ url }}</p>
-                    <a
-                        class="download"
-                        href="data:image/png;base64,{{ single_qr_image }}"
-                        download="qr-code.png"
+                <div class="field">
+                    <label for="title">Internal Label</label>
+                    <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        placeholder="Spring launch poster"
+                        value="{{ title }}"
                     >
-                        Download PNG
-                    </a>
-                </section>
-            {% endif %}
+                </div>
+            </div>
 
-            {% if generated_variants %}
-                <section class="variant-results">
-                    <p class="hint">Generated {{ generated_variants|length }} UTM link{% if generated_variants|length != 1 %}s{% endif %} from {{ url }}.</p>
+            <label class="toggle-row" for="enable_utm_set">
+                <input
+                    type="checkbox"
+                    id="enable_utm_set"
+                    name="enable_utm_set"
+                    {% if enable_utm_set %}checked{% endif %}
+                >
+                Create UTM variants for this short link
+            </label>
 
-                    <div class="variant-grid">
-                        {% for variant in generated_variants %}
-                            <article class="variant-card">
-                                <h2>{{ variant.label }}</h2>
-                                <p class="link"><strong>UTM Link:</strong> {{ variant.url }}</p>
+            <label class="toggle-row" for="generate_qrs">
+                <input
+                    type="checkbox"
+                    id="generate_qrs"
+                    name="generate_qrs"
+                    {% if generate_qrs %}checked{% endif %}
+                >
+                Generate QR codes
+            </label>
+
+            <div class="option-group" id="utm-fields" {% if not enable_utm_set %}hidden{% endif %}>
+                <p class="muted">Enter one variant per line as <code>source,medium</code>. The QR codes point to the short URLs, so scans are counted before redirecting.</p>
+
+                <div class="field">
+                    <label for="utm_campaign">UTM Campaign</label>
+                    <input
+                        type="text"
+                        id="utm_campaign"
+                        name="utm_campaign"
+                        placeholder="spring-launch"
+                        value="{{ utm_campaign }}"
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="utm_variants">UTM Variants</label>
+                    <textarea id="utm_variants" name="utm_variants" spellcheck="false">{{ utm_variants }}</textarea>
+                </div>
+            </div>
+
+            <button type="submit">Create Short Link</button>
+        </form>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    </section>
+
+    {% if result %}
+        <section class="panel result-block">
+            <div class="grid two">
+                <div>
+                    <p class="success">Short link created</p>
+                    <p class="link-text"><strong>Destination:</strong> {{ result.destination_url }}</p>
+                    <p class="link-text"><strong>Base short URL:</strong> <a href="{{ result.short_url }}" target="_blank" rel="noreferrer">{{ result.short_url }}</a></p>
+                    <p><a href="{{ url_for('analytics_link_detail', code=result.code) }}">View link analytics</a></p>
+                </div>
+
+                {% if result.qr_image %}
+                    <div>
+                        <div class="qr-frame">
+                            <img src="data:image/png;base64,{{ result.qr_image }}" alt="QR code for {{ result.short_url }}">
+                        </div>
+                        <p><a class="button" href="data:image/png;base64,{{ result.qr_image }}" download="{{ result.code }}-qr.png">Download QR</a></p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if result.variants %}
+                <div class="result-block">
+                    <h2>UTM Short Links</h2>
+                    <div class="grid three">
+                        {% for variant in result.variants %}
+                            <article class="item-card">
+                                <h3>{{ variant.label }}</h3>
+                                <p class="link-text"><a href="{{ variant.url }}" target="_blank" rel="noreferrer">{{ variant.url }}</a></p>
 
                                 {% if variant.qr_image %}
                                     <div class="qr-frame">
                                         <img src="data:image/png;base64,{{ variant.qr_image }}" alt="QR code for {{ variant.url }}">
                                     </div>
                                     <a
-                                        class="download"
+                                        class="button"
                                         href="data:image/png;base64,{{ variant.qr_image }}"
-                                        download="{{ variant.source }}-{{ variant.medium }}-qr.png"
+                                        download="{{ result.code }}-{{ variant.source }}-{{ variant.medium }}-qr.png"
                                     >
-                                        Download PNG
+                                        Download QR
                                     </a>
                                 {% endif %}
                             </article>
                         {% endfor %}
                     </div>
-                </section>
+                </div>
             {% endif %}
-        </main>
-    </div>
-    <script>
-        const utmToggle = document.getElementById("generate_utm_set");
-        const utmFields = document.getElementById("utm-fields");
-        const utmInputs = utmFields.querySelectorAll("input, textarea");
+        </section>
+    {% endif %}
+</main>
 
-        function syncUtmVisibility() {
-            const enabled = utmToggle.checked;
-            utmFields.hidden = !enabled;
+<script>
+    const utmToggle = document.getElementById("enable_utm_set");
+    const utmFields = document.getElementById("utm-fields");
+    const utmInputs = utmFields.querySelectorAll("input, textarea");
 
-            for (const input of utmInputs) {
-                input.disabled = !enabled;
-            }
+    function syncUtmVisibility() {
+        const enabled = utmToggle.checked;
+        utmFields.hidden = !enabled;
+
+        for (const input of utmInputs) {
+            input.disabled = !enabled;
         }
+    }
 
-        utmToggle.addEventListener("change", syncUtmVisibility);
-        syncUtmVisibility();
-    </script>
-</body>
-</html>
+    utmToggle.addEventListener("change", syncUtmVisibility);
+    syncUtmVisibility();
+</script>
+{% endblock %}

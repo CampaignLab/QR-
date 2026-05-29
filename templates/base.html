@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Link Tracker{% endblock %}</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --surface-soft: #eef5f2;
+            --ink: #172026;
+            --muted: #5f6f7a;
+            --line: #d8e0e5;
+            --accent: #176b87;
+            --accent-dark: #104f64;
+            --danger: #b42318;
+            --success: #147d64;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+
+        a {
+            color: var(--accent);
+        }
+
+        .shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 24px 0 48px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .brand {
+            display: grid;
+            gap: 4px;
+        }
+
+        .brand h1,
+        .brand p {
+            margin: 0;
+        }
+
+        .brand h1 {
+            font-size: clamp(1.75rem, 4vw, 2.55rem);
+            line-height: 1.05;
+            letter-spacing: 0;
+        }
+
+        .brand p,
+        .muted {
+            color: var(--muted);
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .panel,
+        .metric,
+        .item-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .panel {
+            padding: 24px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .form {
+            display: grid;
+            gap: 14px;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+        }
+
+        label,
+        .label {
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--ink);
+            font: inherit;
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 122px;
+            resize: vertical;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 32px;
+        }
+
+        .toggle-row input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .option-group {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--surface-soft);
+        }
+
+        .option-group[hidden] {
+            display: none;
+        }
+
+        .button,
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            min-height: 42px;
+            padding: 10px 16px;
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            background: var(--accent);
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .button.secondary {
+            background: #fff;
+            color: var(--accent);
+        }
+
+        .button:hover,
+        button:hover {
+            background: var(--accent-dark);
+            border-color: var(--accent-dark);
+            color: #fff;
+        }
+
+        .error {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .success {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .result-block {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+        }
+
+        .link-text {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .item-card {
+            display: grid;
+            gap: 10px;
+            padding: 16px;
+        }
+
+        .item-card h2,
+        .item-card h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .qr-frame {
+            width: fit-content;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .qr-frame img {
+            display: block;
+            width: min(220px, 100%);
+            height: auto;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric {
+            padding: 16px;
+        }
+
+        .metric span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .metric strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .bar-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: minmax(80px, 1fr) 3fr 48px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .bar-track {
+            height: 10px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #dfe8ec;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: var(--accent);
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .grid.two,
+            .grid.three,
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="brand">
+                {% block header %}
+                    <h1>Link Tracker</h1>
+                    <p>Short links, QR codes, UTMs, and visit analytics.</p>
+                {% endblock %}
+            </div>
+            <nav class="nav" aria-label="Primary navigation">
+                <a class="button secondary" href="{{ url_for('index') }}">Create Link</a>
+                <a class="button secondary" href="{{ url_for('analytics_dashboard') }}">Analytics</a>
+                {% if session.get("analytics_authenticated") %}
+                    <a class="button secondary" href="{{ url_for('analytics_logout') }}">Log Out</a>
+                {% endif %}
+            </nav>
+        </header>
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

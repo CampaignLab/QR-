@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Link Analytics{% endblock %}
+
+{% block header %}
+    <h1>{{ link.title or link.code }}</h1>
+    <p class="link-text">{{ link.destination_url }}</p>
+{% endblock %}
+
+{% block content %}
+<main class="grid">
+    <section class="metrics">
+        <div class="metric">
+            <span>Total Visits</span>
+            <strong>{{ total_visits }}</strong>
+        </div>
+        <div class="metric">
+            <span>Short Code</span>
+            <strong>{{ link.code }}</strong>
+        </div>
+        <div class="metric">
+            <span>Status</span>
+            <strong>{{ "Live" if link.is_active else "Off" }}</strong>
+        </div>
+    </section>
+
+    <section class="panel">
+        <p class="link-text"><strong>Short URL:</strong> <a href="{{ short_url }}" target="_blank" rel="noreferrer">{{ short_url }}</a></p>
+        <p class="link-text"><strong>Destination:</strong> {{ link.destination_url }}</p>
+        <p class="muted">Created {{ link.created_at }}</p>
+    </section>
+
+    <section class="grid two">
+        <div class="panel">
+            <h2>Daily Visits</h2>
+            {% set max_daily = daily_visits|map(attribute="visit_count")|max|default(0) %}
+            {% if daily_visits %}
+                <div class="bar-list">
+                    {% for day in daily_visits %}
+                        <div class="bar-row">
+                            <span>{{ day.visit_date }}</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: {{ (day.visit_count / max_daily * 100) if max_daily else 0 }}%"></div>
+                            </div>
+                            <strong>{{ day.visit_count }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted">No visits recorded for this link yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h2>UTM Breakdown</h2>
+            {% for title, rows in [("Campaigns", top_campaigns), ("Sources", top_sources), ("Mediums", top_mediums)] %}
+                <h3>{{ title }}</h3>
+                {% set max_count = rows|map(attribute="visit_count")|max|default(0) %}
+                {% if rows %}
+                    <div class="bar-list">
+                        {% for row in rows %}
+                            <div class="bar-row">
+                                <span>{{ row.label }}</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: {{ (row.visit_count / max_count * 100) if max_count else 0 }}%"></div>
+                                </div>
+                                <strong>{{ row.visit_count }}</strong>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="muted">No {{ title|lower }} tracked yet.</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Recent Visits</h2>
+        {% if recent_visits %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Campaign</th>
+                            <th>Source</th>
+                            <th>Medium</th>
+                            <th>Device</th>
+                            <th>IP</th>
+                            <th>Referrer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in recent_visits %}
+                            <tr>
+                                <td>{{ visit.visited_at }}</td>
+                                <td>{{ visit.utm_campaign or "-" }}</td>
+                                <td>{{ visit.utm_source or "-" }}</td>
+                                <td>{{ visit.utm_medium or "-" }}</td>
+                                <td>{{ visit.device_type }} / {{ visit.browser }}</td>
+                                <td>{{ visit.ip_address or "-" }}</td>
+                                <td class="link-text">{{ visit.referrer or "-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="muted">No visits recorded for this link yet.</p>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

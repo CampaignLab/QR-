@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Login{% endblock %}
+
+{% block header %}
+    <h1>Analytics Login</h1>
+    <p>Enter the dashboard password to view tracked visits.</p>
+{% endblock %}
+
+{% block content %}
+<main class="panel">
+    {% if password_missing %}
+        <p class="error">Set the ANALYTICS_PASSWORD environment variable before using the analytics dashboard.</p>
+    {% else %}
+        <form class="form" method="post">
+            <div class="field">
+                <label for="password">Dashboard Password</label>
+                <input type="password" id="password" name="password" required autofocus>
+            </div>
+
+            <button type="submit">Log In</button>
+        </form>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    {% endif %}
+</main>
+{% endblock %}
