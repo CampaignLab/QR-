@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Campaign Analytics{% endblock %}
+
+{% block header %}
+    <h1>{{ campaign }}</h1>
+    <p>Saved links, traffic, and recent activity for this campaign.</p>
+{% endblock %}
+
+{% block content %}
+<main class="grid">
+    <section class="toolbar">
+        <p class="muted">Showing trends by {{ metric_label|lower }}.</p>
+        <nav class="segmented" aria-label="Analytics metric">
+            <a class="{% if metric == 'visits' %}active{% endif %}" href="{{ url_for('analytics_campaign_detail', campaign=campaign, metric='visits') }}">Visits</a>
+            <a class="{% if metric == 'uniques' %}active{% endif %}" href="{{ url_for('analytics_campaign_detail', campaign=campaign, metric='uniques') }}">Unique visitors</a>
+        </nav>
+    </section>
+
+    <section class="metrics">
+        <div class="metric">
+            <span>Total Visits</span>
+            <strong>{{ total_visits }}</strong>
+        </div>
+        <div class="metric">
+            <span>Unique Visitors</span>
+            <strong>{{ total_uniques }}</strong>
+        </div>
+        <div class="metric">
+            <span>Saved Links</span>
+            <strong>{{ generated_links|length }}</strong>
+        </div>
+        <div class="metric">
+            <span>Active Links</span>
+            <strong>{{ active_link_count }}</strong>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Export And Cleanup</h2>
+        <p class="muted">Export this campaign before deleting analytics rows. Cleanup removes campaign visit data from the database; short links stay active unless you explicitly deactivate them.</p>
+
+        <p>
+            <a class="button" href="{{ url_for('export_campaign_csv', campaign=campaign) }}">Export CSV</a>
+        </p>
+
+        {% if cleanup_error %}
+            <p class="error">{{ cleanup_error }}</p>
+        {% endif %}
+
+        {% if cleanup_result.visits_deleted is not none %}
+            <p class="success">
+                Cleanup complete:
+                {{ cleanup_result.visits_deleted }} visit row{% if cleanup_result.visits_deleted != "1" %}s{% endif %} deleted,
+                {{ cleanup_result.generated_deleted }} generated link row{% if cleanup_result.generated_deleted != "1" %}s{% endif %} deleted,
+                {{ cleanup_result.links_deactivated }} short link{% if cleanup_result.links_deactivated != "1" %}s{% endif %} deactivated.
+            </p>
+        {% endif %}
+
+        <form class="form" method="post" action="{{ url_for('cleanup_campaign', campaign=campaign) }}">
+            <div class="field">
+                <label for="confirm_campaign">Type campaign name to clean up</label>
+                <input
+                    type="text"
+                    id="confirm_campaign"
+                    name="confirm_campaign"
+                    placeholder="{{ campaign }}"
+                    autocomplete="off"
+                >
+            </div>
+
+            <label class="toggle-row" for="export_confirmed">
+                <input type="checkbox" id="export_confirmed" name="export_confirmed">
+                I have exported this campaign
+            </label>
+
+            <label class="toggle-row" for="delete_generated">
+                <input type="checkbox" id="delete_generated" name="delete_generated">
+                Also delete saved generated-link rows
+            </label>
+
+            <label class="toggle-row" for="deactivate_links">
+                <input type="checkbox" id="deactivate_links" name="deactivate_links">
+                Also deactivate {{ link_count }} campaign short link{% if link_count != 1 %}s{% endif %}
+            </label>
+
+            <button type="submit">Clean Up Campaign</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Generated Links</h2>
+        {% if generated_links %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variant</th>
+                            <th>Short URL</th>
+                            <th>Destination</th>
+                            <th>Visits</th>
+                            <th>Uniques</th>
+                            <th>Last Visit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for link in generated_links %}
+                            <tr>
+                                <td>{{ link.utm_source }} / {{ link.utm_medium }}</td>
+                                <td class="link-text"><a href="{{ link.url }}" target="_blank" rel="noreferrer">{{ link.url }}</a></td>
+                                <td class="link-text">{{ link.destination_url }}</td>
+                                <td>{{ link.visit_count }}</td>
+                                <td>{{ link.unique_count }}</td>
+                                <td>{{ link.last_visit or "Never" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="muted">No generated links are saved for this campaign.</p>
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <h2>Daily {{ metric_label }}</h2>
+        {% set max_daily = daily_visits|map(attribute="visit_count")|max|default(0) %}
+        {% if daily_visits %}
+            <div class="bar-list">
+                {% for day in daily_visits %}
+                    <div class="bar-row">
+                        <span>{{ day.visit_date }}</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width: {{ (day.visit_count / max_daily * 100) if max_daily else 0 }}%"></div>
+                        </div>
+                        <strong>{{ day.visit_count }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No visits recorded for this campaign yet.</p>
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <h2>Recent Visits</h2>
+        {% if recent_visits %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Link</th>
+                            <th>Source</th>
+                            <th>Medium</th>
+                            <th>Device</th>
+                            <th>Referrer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in recent_visits %}
+                            <tr>
+                                <td>{{ visit.visited_at }}</td>
+                                <td><a href="{{ url_for('analytics_link_detail', code=visit.code) }}">{{ visit.title or visit.code }}</a></td>
+                                <td>{{ visit.utm_source or "-" }}</td>
+                                <td>{{ visit.utm_medium or "-" }}</td>
+                                <td>{{ visit.device_type }} / {{ visit.browser }}</td>
+                                <td class="link-text">{{ visit.referrer or "-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="muted">No visits recorded for this campaign yet.</p>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

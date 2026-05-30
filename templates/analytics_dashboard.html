@@ -9,14 +9,30 @@
 
 {% block content %}
 <main class="grid">
+    <section class="toolbar">
+        <p class="muted">Showing charts and rankings by {{ metric_label|lower }}.</p>
+        <nav class="segmented" aria-label="Analytics metric">
+            <a class="{% if metric == 'visits' %}active{% endif %}" href="{{ url_for('analytics_dashboard', metric='visits') }}">Visits</a>
+            <a class="{% if metric == 'uniques' %}active{% endif %}" href="{{ url_for('analytics_dashboard', metric='uniques') }}">Unique visitors</a>
+        </nav>
+    </section>
+
     <section class="metrics">
         <div class="metric">
             <span>Total Visits</span>
             <strong>{{ total_visits }}</strong>
         </div>
         <div class="metric">
+            <span>Unique Visitors</span>
+            <strong>{{ total_uniques }}</strong>
+        </div>
+        <div class="metric">
             <span>Visits Today</span>
             <strong>{{ visits_today }}</strong>
+        </div>
+        <div class="metric">
+            <span>Unique Today</span>
+            <strong>{{ unique_visitors_today }}</strong>
         </div>
         <div class="metric">
             <span>Short Links</span>
@@ -26,7 +42,7 @@
 
     <section class="grid two">
         <div class="panel">
-            <h2>Visits Over Time</h2>
+            <h2>{{ metric_label }} Over Time</h2>
             {% set max_daily = daily_visits|map(attribute="visit_count")|max|default(0) %}
             {% if daily_visits %}
                 <div class="bar-list">
@@ -53,7 +69,7 @@
                         <thead>
                             <tr>
                                 <th>Link</th>
-                                <th>Visits</th>
+                                <th>{{ metric_label }}</th>
                                 <th>Last Visit</th>
                             </tr>
                         </thead>
@@ -86,7 +102,13 @@
                     <div class="bar-list">
                         {% for row in rows %}
                             <div class="bar-row">
-                                <span>{{ row.label }}</span>
+                                <span>
+                                    {% if title == "Campaigns" %}
+                                        <a href="{{ url_for('analytics_campaign_detail', campaign=row.label, metric=metric) }}">{{ row.label }}</a>
+                                    {% else %}
+                                        {{ row.label }}
+                                    {% endif %}
+                                </span>
                                 <div class="bar-track">
                                     <div class="bar-fill" style="width: {{ (row.visit_count / max_count * 100) if max_count else 0 }}%"></div>
                                 </div>
@@ -99,6 +121,34 @@
                 {% endif %}
             </div>
         {% endfor %}
+    </section>
+
+    <section class="panel">
+        <h2>Generated Campaign Links</h2>
+        {% if generated_campaigns %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Campaign</th>
+                            <th>Saved Links</th>
+                            <th>Last Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for campaign in generated_campaigns %}
+                            <tr>
+                                <td><a href="{{ url_for('analytics_campaign_detail', campaign=campaign.utm_campaign, metric=metric) }}">{{ campaign.utm_campaign }}</a></td>
+                                <td>{{ campaign.link_count }}</td>
+                                <td>{{ campaign.last_created }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="muted">No campaign links have been generated yet.</p>
+        {% endif %}
     </section>
 
     <section class="panel">

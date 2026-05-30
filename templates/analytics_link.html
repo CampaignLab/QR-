@@ -9,10 +9,22 @@
 
 {% block content %}
 <main class="grid">
+    <section class="toolbar">
+        <p class="muted">Showing charts and breakdowns by {{ metric_label|lower }}.</p>
+        <nav class="segmented" aria-label="Analytics metric">
+            <a class="{% if metric == 'visits' %}active{% endif %}" href="{{ url_for('analytics_link_detail', code=link.code, metric='visits') }}">Visits</a>
+            <a class="{% if metric == 'uniques' %}active{% endif %}" href="{{ url_for('analytics_link_detail', code=link.code, metric='uniques') }}">Unique visitors</a>
+        </nav>
+    </section>
+
     <section class="metrics">
         <div class="metric">
             <span>Total Visits</span>
             <strong>{{ total_visits }}</strong>
+        </div>
+        <div class="metric">
+            <span>Unique Visitors</span>
+            <strong>{{ total_uniques }}</strong>
         </div>
         <div class="metric">
             <span>Short Code</span>
@@ -32,7 +44,7 @@
 
     <section class="grid two">
         <div class="panel">
-            <h2>Daily Visits</h2>
+            <h2>Daily {{ metric_label }}</h2>
             {% set max_daily = daily_visits|map(attribute="visit_count")|max|default(0) %}
             {% if daily_visits %}
                 <div class="bar-list">

@@ -6,6 +6,30 @@
 <main class="grid">
     <section class="panel">
         <form class="form" method="post">
+            <div class="option-group">
+                <span class="label">Output Type</span>
+                <label class="toggle-row" for="mode_short_link">
+                    <input
+                        type="radio"
+                        id="mode_short_link"
+                        name="mode"
+                        value="short_link"
+                        {% if mode != 'qr_only' %}checked{% endif %}
+                    >
+                    Tracked short link
+                </label>
+                <label class="toggle-row" for="mode_qr_only">
+                    <input
+                        type="radio"
+                        id="mode_qr_only"
+                        name="mode"
+                        value="qr_only"
+                        {% if mode == 'qr_only' %}checked{% endif %}
+                    >
+                    QR code only
+                </label>
+            </div>
+
             <div class="grid two">
                 <div class="field">
                     <label for="url">Destination URL</label>
@@ -19,7 +43,7 @@
                     >
                 </div>
 
-                <div class="field">
+                <div class="field short-link-only">
                     <label for="title">Internal Label</label>
                     <input
                         type="text"
@@ -31,7 +55,7 @@
                 </div>
             </div>
 
-            <label class="toggle-row" for="enable_utm_set">
+            <label class="toggle-row short-link-only" for="enable_utm_set">
                 <input
                     type="checkbox"
                     id="enable_utm_set"
@@ -41,7 +65,7 @@
                 Create UTM variants for this short link
             </label>
 
-            <label class="toggle-row" for="generate_qrs">
+            <label class="toggle-row short-link-only" for="generate_qrs">
                 <input
                     type="checkbox"
                     id="generate_qrs"
@@ -51,7 +75,7 @@
                 Generate QR codes
             </label>
 
-            <div class="option-group" id="utm-fields" {% if not enable_utm_set %}hidden{% endif %}>
+            <div class="option-group short-link-only" id="utm-fields" {% if not enable_utm_set %}hidden{% endif %}>
                 <p class="muted">Enter one variant per line as <code>source,medium</code>. The QR codes point to the short URLs, so scans are counted before redirecting.</p>
 
                 <div class="field">
@@ -71,7 +95,7 @@
                 </div>
             </div>
 
-            <button type="submit">Create Short Link</button>
+            <button type="submit">Generate</button>
         </form>
 
         {% if error %}
@@ -81,6 +105,20 @@
 
     {% if result %}
         <section class="panel result-block">
+            {% if result.mode == "qr_only" %}
+                <div class="grid two">
+                    <div>
+                        <p class="success">QR code created</p>
+                        <p class="link-text"><strong>Destination:</strong> {{ result.destination_url }}</p>
+                    </div>
+                    <div>
+                        <div class="qr-frame">
+                            <img src="data:image/png;base64,{{ result.qr_image }}" alt="QR code for {{ result.destination_url }}">
+                        </div>
+                        <p><a class="button" href="data:image/png;base64,{{ result.qr_image }}" download="qr-code.png">Download QR</a></p>
+                    </div>
+                </div>
+            {% else %}
             <div class="grid two">
                 <div>
                     <p class="success">Short link created</p>
@@ -125,17 +163,24 @@
                     </div>
                 </div>
             {% endif %}
+            {% endif %}
         </section>
     {% endif %}
 </main>
 
 <script>
+    const modeInputs = document.querySelectorAll("input[name='mode']");
+    const shortLinkOnly = document.querySelectorAll(".short-link-only");
     const utmToggle = document.getElementById("enable_utm_set");
     const utmFields = document.getElementById("utm-fields");
     const utmInputs = utmFields.querySelectorAll("input, textarea");
 
+    function shortLinkModeEnabled() {
+        return document.querySelector("input[name='mode']:checked").value === "short_link";
+    }
+
     function syncUtmVisibility() {
-        const enabled = utmToggle.checked;
+        const enabled = shortLinkModeEnabled() && utmToggle.checked;
         utmFields.hidden = !enabled;
 
         for (const input of utmInputs) {
@@ -143,7 +188,29 @@
         }
     }
 
+    function syncModeVisibility() {
+        const enabled = shortLinkModeEnabled();
+
+        for (const element of shortLinkOnly) {
+            element.hidden = !enabled;
+        }
+
+        for (const element of shortLinkOnly) {
+            const inputs = element.matches("input, textarea, select")
+                ? [element]
+                : element.querySelectorAll("input, textarea, select");
+            for (const input of inputs) {
+                input.disabled = !enabled;
+            }
+        }
+
+        syncUtmVisibility();
+    }
+
+    for (const input of modeInputs) {
+        input.addEventListener("change", syncModeVisibility);
+    }
     utmToggle.addEventListener("change", syncUtmVisibility);
-    syncUtmVisibility();
+    syncModeVisibility();
 </script>
 {% endblock %}
